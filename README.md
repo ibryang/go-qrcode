@@ -16,7 +16,7 @@ A command-line tool `qrcode` will be built into `$GOPATH/bin/`.
 
 ## Usage
 
-    import qrcode "github.com/skip2/go-qrcode"
+    import qrcode "github.com/ibryang/go-qrcode"
 
 - **Create a 256x256 PNG image:**
 

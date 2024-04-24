@@ -52,6 +52,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tdewolff/canvas"
 	"image"
 	"image/color"
 	"image/png"
@@ -60,8 +61,8 @@ import (
 	"log"
 	"os"
 
-	bitset "github.com/skip2/go-qrcode/bitset"
-	reedsolomon "github.com/skip2/go-qrcode/reedsolomon"
+	bitset "github.com/ibryang/go-qrcode/bitset"
+	reedsolomon "github.com/ibryang/go-qrcode/reedsolomon"
 )
 
 // Encode a QR Code and return a raw PNG image.
@@ -198,6 +199,70 @@ func New(content string, level RecoveryLevel) (*QRCode, error) {
 	}
 
 	return q, nil
+}
+
+func (q *QRCode) DrawQRCode(ctx *canvas.Context, xQRCode float64, yQRCode float64, widthQRCode float64) {
+	// Build QR code.
+	q.encode()
+
+	// Minimum pixels (both width and height) required.
+	size := q.symbol.size
+	if size == 0 {
+		log.Fatal("q.symbol.size is ZERO, will /0 fail")
+	}
+	pixelWidth := widthQRCode / float64(size)
+
+	ctx.SetFillColor(canvas.White)
+	ctx.DrawPath(xQRCode, yQRCode, canvas.Rectangle(widthQRCode, widthQRCode))
+
+	// Saves a few bytes to have them in this order
+	ctx.SetFillColor(canvas.Black)
+
+	// QR code bitmap.
+	bitmap := q.symbol.bitmap()
+
+	// Map each image pixel to the nearest QR code module.
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			v := bitmap[y][x]
+			if v {
+				ctx.DrawPath(xQRCode+float64(x)*pixelWidth, yQRCode+float64(size-y)*pixelWidth, canvas.Rectangle(pixelWidth, pixelWidth))
+			}
+		}
+	}
+}
+
+// Canvas returns the QR Code as an image.Image.
+//
+// Based on Image
+func (q *QRCode) Canvas() *canvas.Canvas {
+	// Build QR code.
+	q.encode()
+
+	// Minimum pixels (both width and height) required.
+	size := q.symbol.size
+
+	c := canvas.New(float64(size), float64(size))
+	ctx := canvas.NewContext(c)
+	ctx.SetFillColor(canvas.White)
+	ctx.DrawPath(float64(0), float64(0), canvas.Rectangle(float64(size), float64(size)))
+
+	// Saves a few bytes to have them in this order
+	ctx.SetFillColor(canvas.Black)
+
+	// QR code bitmap.
+	bitmap := q.symbol.bitmap()
+
+	// Map each image pixel to the nearest QR code module.
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			v := bitmap[y][x]
+			if v {
+				ctx.DrawPath(float64(x), float64(size-y), canvas.Rectangle(float64(1), float64(1)))
+			}
+		}
+	}
+	return c
 }
 
 // NewWithForcedVersion constructs a QRCode of a specific version.

@@ -4,6 +4,8 @@
 package qrcode
 
 import (
+	"github.com/tdewolff/canvas"
+	"github.com/tdewolff/canvas/renderers"
 	"strings"
 	"testing"
 )
@@ -172,4 +174,13 @@ func BenchmarkQRCodeMaximumSize(b *testing.B) {
 		// 7089 is the maximum encodable number of numeric digits.
 		New(strings.Repeat("0", 7089), Low)
 	}
+}
+
+func TestDrawQrcode(t *testing.T) {
+	code, _ := New("01234567", Medium)
+	c := canvas.New(100, 100)
+	ctx := canvas.NewContext(c)
+	code.DrawQRCode(ctx, 0, 0, 100)
+
+	renderers.Write("qrcode.pdf", c)
 }
